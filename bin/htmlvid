@@ -1,0 +1,33 @@
+#!/bin/sh
+set -eCu
+
+for f in "$@"; do
+IFS=x read w h <<EOF
+$(ffmpeg -i "$f" 2>&1 | sed -ne '/Video:/{/(default)$/{s/([^)]*)//g;s/ *, */,/g;p;};}' | cut -d , -f 3 | cut -w -f 1)
+EOF
+
+cat > "$f.html" <<EOF
+<!doctype html>
+<html>
+	<meta charset="utf-8">
+	<title>video</title>
+	<style>
+		body {
+			margin: 0;
+			overflow: hidden;
+			background: #000;
+		}
+		video {
+			width: auto;
+			height: 100vh;
+			margin: 0 auto;
+			display: block;
+		}
+		video::cue {
+			background-color: rgba(0, 0, 0, 0.333);
+		}
+	</style>
+	<video src="$f" width="$w" height="$h" controls autoplay>
+		$( ([ -f "$f.vtt" ] || (ffmpeg -txt_format text -i "$f" "$f.srt" && srt2vtt "$f.srt" )) && echo '<track kind="subtitles" src="'"$f.vtt"'" srclang="en">')
+EOF
+done

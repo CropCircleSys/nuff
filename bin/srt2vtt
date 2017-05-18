@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eCu
+
+for f in "$@"; do
+	echo WEBVTT > "${f%.srt}.vtt"
+	echo >> "${f%.srt}.vtt"
+	sed -Ee '/ --> /s/:([[:digit:]]{2}),/:\1./g' "$f" >> "${f%.srt}.vtt"
+done
+

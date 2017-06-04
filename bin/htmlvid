@@ -27,7 +27,7 @@ cat > "$f.html" <<EOF
 			background-color: rgba(0, 0, 0, 0.333);
 		}
 	</style>
-	<video src="$f" width="$w" height="$h" controls autoplay>
-		$( ([ -f "$f.vtt" ] || (ffmpeg -txt_format text -i "$f" "$f.srt" && srt2vtt "$f.srt" )) && echo '<track kind="subtitles" src="'"$f.vtt"'" srclang="en">')
+	<video src="`basename "$f"`" width="$w" height="$h" controls autoplay>
+		$( ([ -f "$f.vtt" ] || (ffmpeg -txt_format text -i "$f" "$f.srt" && srt2vtt "$f.srt" )) && echo '<track kind="subtitles" src="'"`basename "$f"`.vtt"'" srclang="en">')
 EOF
 done

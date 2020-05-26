@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# 1st argument is milliseconds to shift
+# positive number makes subtitles later
+# negative number makes subtitles sooner
+
+tr -d \\r | while read -r ln; do
+
+	if printf %s "$ln" | grep -qE '^[[:digit:]]{2,6}:[[:digit:]]{2}:[[:digit:]]{2},[[:digit:]]{3} --> [[:digit:]]{2,6}:[[:digit:]]{2}:[[:digit:]]{2},[[:digit:]]{3}$'; then
+
+		read -r start _ end <<EOF
+$ln
+EOF
+		IFS=: read -r sh sm ss <<EOF
+$start
+EOF
+		IFS=, read -r sws sms <<EOF
+$ss
+EOF
+		IFS=: read -r eh em es <<EOF
+$end
+EOF
+		IFS=, read -r ews ems <<EOF
+$es
+EOF
+
+		sh=${sh#0}
+		sm=${sm#0}
+		sws=${sws#0}
+		sms=${sms#0}
+		sms=${sms#0}
+
+		eh=${eh#0}
+		em=${em#0}
+		ews=${ews#0}
+		ems=${ems#0}
+		ems=${ems#0}
+
+		stms=$(( $sh * 3600000 + $sm * 60000 + $sws * 1000 + $sms + ${1-0} ))
+		etms=$(( $eh * 3600000 + $em * 60000 + $ews * 1000 + $ems + ${1-0} ))
+		
+		if [ 0 -gt "$stms" ]; then
+			stms=0
+		fi
+		if [ 0 -gt "$etms" ]; then
+			etms=0
+		fi
+
+		if [ -n "$2" ]; then
+			stms=`bc -e "$stms*$2" -e quit | cut -d . -f 1`
+			etms=`bc -e "$etms*$2" -e quit | cut -d . -f 1`
+		fi
+
+		sh=$(( $stms / 3600000 ))
+		sm=$(( ( $stms - $sh * 3600000 ) / 60000 ))
+		sws=$(( ( $stms - $sh * 3600000 - $sm * 60000 ) / 1000 ))
+		sms=$(( $stms - $sh * 3600000 - $sm * 60000 - $sws * 1000 ))
+
+		eh=$(( $etms / 3600000 ))
+		em=$(( ( $etms - $eh * 3600000 ) / 60000 ))
+		ews=$(( ( $etms - $eh * 3600000 - $em * 60000 ) / 1000 ))
+		ems=$(( $etms - $eh * 3600000 - $em * 60000 - $ews * 1000 ))
+
+		stc=`printf %02d $sh`:`printf %02d $sm`:`printf %02d $sws`,`printf %03d $sms`
+		etc=`printf %02d $eh`:`printf %02d $em`:`printf %02d $ews`,`printf %03d $ems`
+
+		echo "$stc --> $etc"
+	else
+		printf '%s\n' "$ln"
+	fi
+
+done
